@@ -712,13 +712,12 @@ def update_costs_dashboard(tipo_mantenimiento, mes, cliente, flota):
     cpk_promedio = df_active[cpk_column].mean()
     cpk_maximo = df_active[cpk_column].max()
     cpk_minimo = df_active[df_active[cpk_column] > 0][cpk_column].min() if len(df_active[df_active[cpk_column] > 0]) > 0 else 0
-    desviacion_std = df_active[cpk_column].std()
+    
     
     kpi_cards = dbc.Row([
-        dbc.Col([create_kpi_card_costos("CPK PROMEDIO", cpk_promedio, "$/km", azul)], width=3),
-        dbc.Col([create_kpi_card_costos("CPK MÁXIMO", cpk_maximo, "$/km", negative)], width=3),
-        dbc.Col([create_kpi_card_costos("CPK MÍNIMO", cpk_minimo, "$/km", success)], width=3),
-        dbc.Col([create_kpi_card_costos("DESVIACIÓN ESTD.", desviacion_std, "$/km", azul_2)], width=3),
+        dbc.Col([create_kpi_card_costos("CPK PROMEDIO", cpk_promedio, "$/km", azul)], width=4),
+        dbc.Col([create_kpi_card_costos("CPK MÁXIMO", cpk_maximo, "$/km", negative)], width=4),
+        dbc.Col([create_kpi_card_costos("CPK MÍNIMO", cpk_minimo, "$/km", success)], width=4),
     ])
     
     # 2. Gráfico de Pie - Distribución de costos
@@ -1242,7 +1241,7 @@ def update_km_filter_buttons(tipo_mantenimiento, mes, cliente, flota, selected_r
             is_selected = selected_range == rango
             buttons.append(
                 dbc.Button(
-                    f"{rango} ({count})",
+                    f"{rango}",
                     id={'type': 'km-filter-btn', 'index': rango},
                     color='primary' if is_selected else 'secondary',
                     outline=not is_selected,
@@ -1366,6 +1365,7 @@ def update_analysis_dashboard_km(tipo_mantenimiento, mes, cliente, flota, select
         )
         pie_fig = empty_fig
     else:
+
         color_map = {
             'Combustible': amarillo,
             'Mantenimiento': negative,
@@ -1799,7 +1799,13 @@ def actualizar_dashboard_ranking(tipo_mantenimiento, meses, categoria, tipo_rank
     return fig, data, columns, titulo, kpis
 
 # %%
-#Layout Fuzzy
+df_riesgo.head(10)
+
+# %%
+# excluir marzo
+df_riesgo = df_riesgo[df_riesgo['Mes'].isin(['2025-01-01 00:00:00', '2025-02-01 00:00:00'])].copy()
+
+# Layout Fuzzy (mismo código, sin cambios en esta parte)
 def layout_fuzzy():
     return html.Div([
         # Header
@@ -1807,7 +1813,7 @@ def layout_fuzzy():
             dbc.Col([
                 html.H2("Monitoreo Fuzzy - Análisis de Riesgo", 
                        style={'color': azul, 'fontWeight': 'bold', 'fontFamily': 'Roboto', 'marginBottom': '10px'}),
-                html.P("Basado en lógica difusa (Solo datos 2025)",
+                html.P("Basado en lógica difusa (Enero-Febrero 2025)",
                        style={'color': negro, 'fontSize': '16px', 'fontFamily': 'Roboto', 'marginBottom': '30px'})
             ])
         ]),
@@ -1837,18 +1843,18 @@ def layout_fuzzy():
                 )
             ], width=3),
             
-            # Filtro de flota
+            # Filtro de flota 
             dbc.Col([
                 html.Label("Flota (Unidad):", style={'fontWeight': 'bold', 'color': azul_2}),
                 dcc.Dropdown(
                     id='filtro-flota-fuzzy',
                     options=[],
-                    value='todos',
+                    value=['todos'],
+                    multi=True,  
                     style={'fontFamily': 'Roboto'}
                 )
             ], width=3),
         
-            
             # Filtro de categoría de riesgo
             dbc.Col([
                 html.Label("Categoría de Riesgo:", style={'fontWeight': 'bold', 'color': azul_2}),
@@ -1879,12 +1885,27 @@ def layout_fuzzy():
             dbc.Col(html.Div(id='kpis-fuzzy'))
         ], className="mb-4"),
         
+        # Costos por categoría de riesgo
+        dbc.Row([
+            dbc.Col([
+                dbc.Card([
+                    dbc.CardHeader([
+                        html.H5("Costos Totales por Categoría de Riesgo", 
+                               style={'margin': '0', 'color': azul, 'fontFamily': 'Roboto'})
+                    ], style={'backgroundColor': azul_claro, 'border': 'none'}),
+                    dbc.CardBody([
+                        html.Div(id='costos-riesgo-fuzzy')
+                    ])
+                ], style={'border': f'1px solid {azul_claro}'})
+            ])
+        ], className="mb-4"),
+
         dbc.Row([
             # Gráfico de barras interactivo
             dbc.Col([
                 dbc.Card([
                     dbc.CardHeader([
-                        html.H5("Distribución y Análisis por Categoría de Riesgo", 
+                        html.H5("Análisis de Costos por Categoría de Riesgo", 
                                style={'margin': '0', 'color': azul, 'fontFamily': 'Roboto'})
                     ], style={'backgroundColor': azul_claro, 'border': 'none'}),
                     dbc.CardBody([
@@ -1922,7 +1943,7 @@ def layout_fuzzy():
             ])
         ], className="mb-4"),
         
-        # Tabla de unidades de alto riesgo
+        # Tabla de unidades de alto riesgo (igual)
         dbc.Row([
             dbc.Col([
                 dbc.Card([
@@ -1987,7 +2008,7 @@ def layout_fuzzy():
         ])
     ])
 
-# Callback para actualizar opciones de filtros
+# Callbacks actualizados (sin cambios)
 @callback(
     [Output('filtro-mes-fuzzy', 'options'),
      Output('filtro-cliente-fuzzy', 'options')],
@@ -2006,7 +2027,6 @@ def actualizar_opciones_fuzzy(_):
     
     return meses_opciones, clientes_opciones
 
-# Callback para actualizar opciones de filtros
 @callback(
     Output('filtro-flota-fuzzy', 'options'),
     [Input('filtro-mes-fuzzy', 'value'),
@@ -2033,9 +2053,10 @@ def actualizar_flota_fuzzy(meses, clientes):
 
     return opciones
 
-# Callback principal 
+# Callback principal actualizado - SIN distribución de riesgo
 @callback(
     [Output('kpis-fuzzy', 'children'),
+     Output('costos-riesgo-fuzzy', 'children'),  # OUTPUT PARA COSTOS
      Output('grafico-barras-fuzzy', 'figure'),
      Output('scatter-fuzzy', 'figure'),
      Output('boxplot-comparacion-fuzzy', 'figure'),
@@ -2047,29 +2068,39 @@ def actualizar_flota_fuzzy(meses, clientes):
      Input('filtro-flota-fuzzy', 'value'),
      Input('filtro-riesgo-fuzzy', 'value')]
 )
-def actualizar_dashboard_fuzzy(meses, clientes, flota, categoria_riesgo):
+def actualizar_dashboard_fuzzy(meses, clientes, flotas, categoria_riesgo):
+    # ===== APLICAR FILTROS PASO A PASO =====
     df_filtrado = df_riesgo.copy()
-    
     df_filtrado['Mes'] = df_filtrado['Mes'].astype(str)
+    
+    print(f"Datos iniciales: {len(df_filtrado)} registros, {df_filtrado['Unidad'].nunique()} unidades únicas")
     
     # Filtrar por mes
     if isinstance(meses, list) and 'todos' not in meses and len(meses) > 0:
         df_filtrado = df_filtrado[df_filtrado['Mes'].isin(meses)]
+        print(f"Después filtro mes: {len(df_filtrado)} registros, {df_filtrado['Unidad'].nunique()} unidades únicas")
     
     # Filtrar por cliente
     if isinstance(clientes, list) and 'todos' not in clientes and len(clientes) > 0:
         df_filtrado = df_filtrado[df_filtrado['Cliente'].isin(clientes)]
+        print(f"Después filtro cliente: {len(df_filtrado)} registros, {df_filtrado['Unidad'].nunique()} unidades únicas")
 
-    # Filtrar por flota
-    if flota != 'todos' and flota is not None:
-        df_filtrado = df_filtrado[df_filtrado['Unidad'] == flota]
+    # CREAR DF_BASE PARA CONTEOS (antes del filtro de categoría de riesgo)
+    df_base_conteos = df_filtrado.copy()
+
+    # Filtrar por flotas (MULTI-SELECT)
+    if isinstance(flotas, list) and 'todos' not in flotas and len(flotas) > 0:
+        df_filtrado = df_filtrado[df_filtrado['Unidad'].isin(flotas)]
+        df_base_conteos = df_base_conteos[df_base_conteos['Unidad'].isin(flotas)]
+        print(f"Después filtro flotas: {len(df_filtrado)} registros, {df_filtrado['Unidad'].nunique()} unidades únicas")
     
-    # Filtrar por categoría de riesgo
+    # Filtrar por categoría de riesgo (SOLO para gráficos, NO para conteos)
     if categoria_riesgo != 'todos':
         df_filtrado = df_filtrado[df_filtrado['categoria_riesgo_difuso'] == categoria_riesgo]
+        print(f"Después filtro categoría: {len(df_filtrado)} registros, {df_filtrado['Unidad'].nunique()} unidades únicas")
     
     # Verificar si hay datos
-    if df_filtrado.empty:
+    if df_base_conteos.empty:
         empty_fig = go.Figure()
         empty_fig.add_annotation(
             text="No hay datos para los filtros seleccionados",
@@ -2081,13 +2112,13 @@ def actualizar_dashboard_fuzzy(meses, clientes, flota, categoria_riesgo):
             paper_bgcolor='white',
             height=400
         )
-        return [], empty_fig, empty_fig, empty_fig, [], [], "Sin datos"
+        return [], [], [], empty_fig, empty_fig, empty_fig, [], [], "Sin datos"
     
-    # 1. KPIs
-    total_unidades = df_filtrado['Unidad'].nunique()
-    unidades_alto_riesgo = len(df_filtrado[df_filtrado['categoria_riesgo_difuso'] == 'alto']['Unidad'].unique())
-    riesgo_promedio = df_filtrado['riesgo_difuso'].mean()
-    cpk_promedio = df_filtrado['CPK_total'].mean()
+    # 1. KPIs - USAR df_base_conteos para conteos consistentes
+    total_unidades = df_base_conteos['Unidad'].nunique()
+    unidades_alto_riesgo = len(df_base_conteos[df_base_conteos['categoria_riesgo_difuso'] == 'alto']['Unidad'].unique())
+    riesgo_promedio = df_base_conteos['riesgo_difuso'].mean()
+    cpk_promedio = df_base_conteos['CPK_total'].mean()
     
     kpis = dbc.Row([
         dbc.Col([
@@ -2139,47 +2170,250 @@ def actualizar_dashboard_fuzzy(meses, clientes, flota, categoria_riesgo):
         ], width=3),
     ])
     
-    # 2. Gráfico de barras
-    conteo_riesgo = df_filtrado['categoria_riesgo_difuso'].value_counts().reset_index()
-    conteo_riesgo.columns = ['categoria', 'conteo']
+    # ===== DEBUG DETALLADO PARA IDENTIFICAR EL PROBLEMA =====
+    print(f"\n=== ANÁLISIS DETALLADO DE DATOS ===")
+    print(f"df_base_conteos total registros: {len(df_base_conteos)}")
+    print(f"df_base_conteos unidades únicas: {df_base_conteos['Unidad'].nunique()}")
     
-    # subplots
+    # Verificar si hay NaN en categoria_riesgo_difuso
+    nulos_categoria = df_base_conteos['categoria_riesgo_difuso'].isnull().sum()
+    print(f"Registros con categoría nula: {nulos_categoria}")
+    
+    # Verificar categorías únicas
+    categorias_unicas = df_base_conteos['categoria_riesgo_difuso'].value_counts()
+    print(f"Distribución de categorías (todos los registros):")
+    print(categorias_unicas)
+    
+    # Verificar unidades únicas por categoría (método más robusto)
+    df_unidades_unicas_debug = df_base_conteos.drop_duplicates(subset=['Unidad']).copy()
+    print(f"\nUnidades únicas después de drop_duplicates: {len(df_unidades_unicas_debug)}")
+    
+    categorias_unidades = df_unidades_unicas_debug['categoria_riesgo_difuso'].value_counts()
+    print(f"Distribución de unidades únicas por categoría:")
+    print(categorias_unidades)
+    
+    # 2. CORRECCIÓN: Distribución por categoría de riesgo (conteo único por unidad)
+    # USAR df_base_conteos para conteos consistentes (sin filtro de categoría de riesgo)
+    # Aplicar el mismo método que en KPIs para consistencia
+    unidades_bajo_riesgo = len(df_base_conteos[df_base_conteos['categoria_riesgo_difuso'] == 'bajo']['Unidad'].unique())
+    unidades_medio_riesgo = len(df_base_conteos[df_base_conteos['categoria_riesgo_difuso'] == 'medio']['Unidad'].unique())
+    unidades_alto_riesgo_dist = len(df_base_conteos[df_base_conteos['categoria_riesgo_difuso'] == 'alto']['Unidad'].unique())
+    
+    # Verificar si hay unidades sin categoría definida
+    unidades_sin_categoria = len(df_base_conteos[df_base_conteos['categoria_riesgo_difuso'].isnull()]['Unidad'].unique())
+    
+    # Crear DataFrame con los conteos
+    unidades_por_riesgo = pd.DataFrame({
+        'Riesgo': ['bajo', 'medio', 'alto'],
+        'Número de Unidades': [unidades_bajo_riesgo, unidades_medio_riesgo, unidades_alto_riesgo_dist]
+    })
+    
+    # Debug prints
+    print(f"\n=== CONTEO POR CATEGORÍA (método mejorado) ===")
+    print(f"Bajo: {unidades_bajo_riesgo}")
+    print(f"Medio: {unidades_medio_riesgo}")
+    print(f"Alto: {unidades_alto_riesgo_dist}")
+    print(f"Sin categoría: {unidades_sin_categoria}")
+    print(f"Suma total: {unidades_bajo_riesgo + unidades_medio_riesgo + unidades_alto_riesgo_dist + unidades_sin_categoria}")
+    print(f"Unidades únicas totales: {df_base_conteos['Unidad'].nunique()}")
+    
+    # Si hay diferencia, investigar más
+    suma_categorias = unidades_bajo_riesgo + unidades_medio_riesgo + unidades_alto_riesgo_dist
+    total_unidades_real = df_base_conteos['Unidad'].nunique()
+    
+    if suma_categorias != total_unidades_real:
+        print(f"\n⚠️  DISCREPANCIA DETECTADA:")
+        print(f"Suma por categorías: {suma_categorias}")
+        print(f"Total real de unidades: {total_unidades_real}")
+        print(f"Diferencia: {total_unidades_real - suma_categorias}")
+        
+        # Buscar unidades problemáticas
+        unidades_categorizadas = set()
+        unidades_categorizadas.update(df_base_conteos[df_base_conteos['categoria_riesgo_difuso'] == 'bajo']['Unidad'].unique())
+        unidades_categorizadas.update(df_base_conteos[df_base_conteos['categoria_riesgo_difuso'] == 'medio']['Unidad'].unique())
+        unidades_categorizadas.update(df_base_conteos[df_base_conteos['categoria_riesgo_difuso'] == 'alto']['Unidad'].unique())
+        
+        todas_las_unidades = set(df_base_conteos['Unidad'].unique())
+        unidades_sin_categoria_set = todas_las_unidades - unidades_categorizadas
+        
+        print(f"Unidades sin categoría válida: {list(unidades_sin_categoria_set)[:10]}...")  # Mostrar solo las primeras 10
+    
+    # Calcular porcentajes
+    total_unidades_dist = unidades_por_riesgo['Número de Unidades'].sum()
+    unidades_por_riesgo['Porcentaje'] = round((unidades_por_riesgo['Número de Unidades'] / total_unidades_dist) * 100, 1)
+    
+    # CAMBIO 3: Ordenar como bajo, medio, alto
+    orden_riesgo_cards = ['bajo', 'medio', 'alto']
+    unidades_por_riesgo['Riesgo'] = pd.Categorical(
+        unidades_por_riesgo['Riesgo'], 
+        categories=orden_riesgo_cards, 
+        ordered=True
+    )
+    unidades_por_riesgo = unidades_por_riesgo.sort_values('Riesgo')
+    
+    # Crear tarjetas de distribución
+    color_map = {'alto': negative, 'medio': amarillo, 'bajo': success}
+    
+    distribucion_cards = []
+    for _, row in unidades_por_riesgo.iterrows():
+        riesgo = row['Riesgo']
+        cantidad = row['Número de Unidades']
+        porcentaje = row['Porcentaje']
+        color = color_map.get(riesgo, azul)
+        
+        card = dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H3(f"{cantidad}", 
+                           style={'color': color, 'fontWeight': 'bold', 'marginBottom': '0', 'fontFamily': 'Roboto'}),
+                    html.P(f"Riesgo {riesgo.capitalize()}", 
+                           style={'fontSize': '16px', 'fontWeight': 'bold', 'marginBottom': '5px', 'fontFamily': 'Roboto'}),
+                    html.P(f"{porcentaje}% del total", 
+                           className="text-muted", 
+                           style={'fontSize': '14px', 'fontFamily': 'Roboto', 'marginBottom': '0'})
+                ])
+            ], style={'border': f'2px solid {color}', 'borderRadius': '10px', 'height': '120px', 'textAlign': 'center'})
+        ], width=4)
+        distribucion_cards.append(card)
+    
+    distribucion_riesgo = dbc.Row(distribucion_cards)
+    
+    # CAMBIO 1: Cálculo de costos totales por categoría de riesgo
+    # USAR df_base_conteos para cálculos consistentes
+    gasto_total_por_riesgo = df_base_conteos.groupby('categoria_riesgo_difuso')[[ 
+        'Costo por carga', 'mantenimiento_total' 
+    ]].mean().reset_index()
+    
+    # Crear nueva columna con la suma total de ambos costos
+    gasto_total_por_riesgo['Costos Totales'] = (
+        gasto_total_por_riesgo['Costo por carga'] + 
+        gasto_total_por_riesgo['mantenimiento_total']
+    )
+    
+    # Debug prints
+    print("Costos por categoría de riesgo:")
+    print(gasto_total_por_riesgo)
+    
+    # Renombrar columnas para mayor claridad
+    gasto_total_por_riesgo.columns = ['Riesgo', 'Costo por Carga Promedio', 'Mantenimiento Promedio', 'Costos Totales Promedio']
+    
+    # Asegurar el orden personalizado de las categorías de riesgo
+    orden_personalizado = ['bajo', 'medio', 'alto']
+    gasto_total_por_riesgo['Riesgo'] = pd.Categorical(
+        gasto_total_por_riesgo['Riesgo'], 
+        categories=orden_personalizado, 
+        ordered=True
+    )
+    # Ordenar el DataFrame
+    gasto_total_por_riesgo = gasto_total_por_riesgo.sort_values('Riesgo')
+    
+    # Crear cards de costos
+    color_map = {'alto': negative, 'medio': amarillo, 'bajo': success}
+    costos_cards = []
+    for _, row in gasto_total_por_riesgo.iterrows():
+        riesgo = row['Riesgo']
+        costo_total = row['Costos Totales Promedio']
+        color = color_map.get(riesgo, azul)
+        
+        card = dbc.Col([
+            dbc.Card([
+                dbc.CardBody([
+                    html.H3(f"${costo_total:,.0f}", 
+                           style={'color': color, 'fontWeight': 'bold', 'marginBottom': '0', 'fontFamily': 'Roboto'}),
+                    html.P(f"Riesgo {riesgo.capitalize()}", 
+                           style={'fontSize': '16px', 'fontWeight': 'bold', 'marginBottom': '5px', 'fontFamily': 'Roboto'}),
+                    html.P("Costo Total Promedio", 
+                           className="text-muted", 
+                           style={'fontSize': '14px', 'fontFamily': 'Roboto', 'marginBottom': '0'})
+                ])
+            ], style={'border': f'2px solid {color}', 'borderRadius': '10px', 'height': '120px', 'textAlign': 'center'})
+        ], width=4)
+        costos_cards.append(card)
+    
+    costos_riesgo = dbc.Row(costos_cards)
+    
+    # 3. Gráfico de barras actualizado con costos totales
+    # Usar df_filtrado para gráficos (incluye filtro de categoría si está aplicado)
+    gasto_por_riesgo = df_filtrado.groupby('categoria_riesgo_difuso').agg({
+        'Costo por carga': 'mean',
+        'mantenimiento_total': 'mean',
+        'kmstotales': 'mean'
+    }).reset_index()
+    
+    # Si no hay datos después del filtro de categoría, usar df_base_conteos
+    if gasto_por_riesgo.empty:
+        gasto_por_riesgo = df_base_conteos.groupby('categoria_riesgo_difuso').agg({
+            'Costo por carga': 'mean',
+            'mantenimiento_total': 'mean',
+            'kmstotales': 'mean'
+        }).reset_index()
+    
+    # Agregar columna de costos totales al gráfico también
+    gasto_por_riesgo['costos_totales'] = (
+        gasto_por_riesgo['Costo por carga'] + 
+        gasto_por_riesgo['mantenimiento_total']
+    )
+    
+    # Ordenar por categoría (bajo, medio, alto)
+    orden_riesgo = ['bajo', 'medio', 'alto']
+    gasto_por_riesgo['categoria_riesgo_difuso'] = pd.Categorical(
+        gasto_por_riesgo['categoria_riesgo_difuso'], 
+        categories=orden_riesgo, 
+        ordered=True
+    )
+    gasto_por_riesgo = gasto_por_riesgo.sort_values('categoria_riesgo_difuso')
+    
     from plotly.subplots import make_subplots
     
     fig_barras = make_subplots(
         rows=1, cols=2,
-        subplot_titles=("Distribución por Riesgo", "Promedios por Variable"),
-        column_widths=[0.4, 0.6]
+        subplot_titles=("Costos Promedio por Riesgo", "Kilómetros Promedio por Riesgo"),
+        column_widths=[0.6, 0.4]
     )
     
-    # Gráfico izquierdo - Conteo
-    color_map = {'alto': negative, 'medio': amarillo, 'bajo': success}
-    colors = [color_map.get(cat, azul) for cat in conteo_riesgo['categoria']]
+    # Gráfico izquierdo - Costos
+    categorias = gasto_por_riesgo['categoria_riesgo_difuso'].tolist()
+    colors = [color_map.get(cat, azul) for cat in categorias]
     
     fig_barras.add_trace(
         go.Bar(
-            x=conteo_riesgo['categoria'],
-            y=conteo_riesgo['conteo'],
-            marker_color=colors,
-            name='Unidades',
-            showlegend=False
+            x=categorias,
+            y=gasto_por_riesgo['Costo por carga'],
+            name='Combustible',
+            marker_color=amarillo
         ),
         row=1, col=1
     )
     
-    # Gráfico derecho - Promedios
-    variables_difusas = ['kmstotales', 'mantenimiento_total', 'Costo por carga']
-    promedios = []
-    for var in variables_difusas:
-        promedio = df_filtrado[var].mean()
-        promedios.append(promedio)
-    
     fig_barras.add_trace(
         go.Bar(
-            x=variables_difusas,
-            y=promedios,
-            marker_color=[azul_3, negative, amarillo],
-            name='Promedio',
+            x=categorias,
+            y=gasto_por_riesgo['mantenimiento_total'],
+            name='Mantenimiento',
+            marker_color=negative
+        ),
+        row=1, col=1
+    )
+    
+    # Agregar línea de costos totales
+    fig_barras.add_trace(
+        go.Scatter(
+            x=categorias,
+            y=gasto_por_riesgo['costos_totales'],
+            mode='lines+markers',
+            name='Total',
+            line=dict(color=azul, width=3),
+            marker=dict(size=8)
+        ),
+        row=1, col=1
+    )
+    
+    # Gráfico derecho - Kilómetros
+    fig_barras.add_trace(
+        go.Bar(
+            x=categorias,
+            y=gasto_por_riesgo['kmstotales'],
+            marker_color=colors,
             showlegend=False
         ),
         row=1, col=2
@@ -2189,10 +2423,11 @@ def actualizar_dashboard_fuzzy(meses, clientes, flota, categoria_riesgo):
         height=400,
         plot_bgcolor='white',
         paper_bgcolor='white',
-        font=dict(family='Roboto')
+        font=dict(family='Roboto'),
+        barmode='group'
     )
     
-    # 3. Scatter plot
+    # 4. Scatter plot (sin cambios)
     fig_scatter = px.scatter(
         df_filtrado,
         x='CPK_total',
@@ -2215,14 +2450,13 @@ def actualizar_dashboard_fuzzy(meses, clientes, flota, categoria_riesgo):
         font=dict(family='Roboto')
     )
 
-    # 4. Boxplot
+    # 5. Boxplot (sin cambios)
     alto_riesgo = df_filtrado[df_filtrado['riesgo_difuso'] >= 7].copy()
     bajo_medio_riesgo = df_filtrado[df_filtrado['riesgo_difuso'] < 7].copy()
     
     variables = ['kmstotales', 'mantenimiento_total', 'Costo por carga']
     nombres_variables = ['Kilómetros Totales', 'Mantenimiento Total', 'Costo por Carga']
     
-    from plotly.subplots import make_subplots
     fig_boxplot = make_subplots(
         rows=3, cols=2,
         subplot_titles=(
@@ -2235,7 +2469,6 @@ def actualizar_dashboard_fuzzy(meses, clientes, flota, categoria_riesgo):
     )
     
     for i, (var, nombre) in enumerate(zip(variables, nombres_variables)):
-
         if len(alto_riesgo) > 0:
             fig_boxplot.add_trace(
                 go.Box(
@@ -2247,7 +2480,6 @@ def actualizar_dashboard_fuzzy(meses, clientes, flota, categoria_riesgo):
                 row=i+1, col=1
             )
         
-        # Bajo/Medio riesgo 
         if len(bajo_medio_riesgo) > 0:
             fig_boxplot.add_trace(
                 go.Box(
@@ -2258,6 +2490,7 @@ def actualizar_dashboard_fuzzy(meses, clientes, flota, categoria_riesgo):
                 ),
                 row=i+1, col=2
             )
+    
     fig_boxplot.update_layout(
         height=800,
         showlegend=True,
@@ -2273,19 +2506,23 @@ def actualizar_dashboard_fuzzy(meses, clientes, flota, categoria_riesgo):
         )
     )
     
-    fig_boxplot.update_yaxes(title_text="Kilómetros", row=1, col=1)
-    fig_boxplot.update_yaxes(title_text="Kilómetros", row=1, col=2)
-    fig_boxplot.update_yaxes(title_text="$ Mantenimiento", row=2, col=1)
-    fig_boxplot.update_yaxes(title_text="$ Mantenimiento", row=2, col=2)
-    fig_boxplot.update_yaxes(title_text="$ Combustible", row=3, col=1)
-    fig_boxplot.update_yaxes(title_text="$ Combustible", row=3, col=2)
-    
-    # 5. Tabla de alto riesgo
-    df_tabla = df_filtrado[df_filtrado['riesgo_difuso'] >= 7][[
+    # 6. Tabla de unidades - USAR df_filtrado para incluir filtros de flota
+    # Mostrar todas las unidades del filtro, no solo las de alto riesgo
+    df_tabla_completa = df_filtrado[[
         'Unidad', 'Mes', 'Cliente', 'CPK_total', 'mantenimiento_total',
         'Costo por carga', 'Costo Caseta', 'kmstotales',
         'riesgo_difuso', 'categoria_riesgo_difuso'
-    ]].sort_values(by='riesgo_difuso', ascending=False).head(20)
+    ]].sort_values(by='riesgo_difuso', ascending=False)
+    
+    # Si hay filtro de categoría específica, mostrar esas unidades
+    # Si no hay filtro específico, mostrar las de alto riesgo (>= 7)
+    if categoria_riesgo == 'todos':
+        df_tabla = df_tabla_completa[df_tabla_completa['riesgo_difuso'] >= 7].head(20)
+        titulo_tabla = f"Unidades con Mayor Riesgo Operativo (≥ 6.0)"
+    else:
+        df_tabla = df_tabla_completa.head(20)
+        titulo_tabla = f"Unidades de Riesgo {categoria_riesgo.capitalize()}"
+    
     
     # Formatear columnas numéricas
     df_tabla['CPK_total'] = df_tabla['CPK_total'].round(2)
@@ -2309,9 +2546,7 @@ def actualizar_dashboard_fuzzy(meses, clientes, flota, categoria_riesgo):
         {"name": "Categoría", "id": "categoria_riesgo_difuso"}
     ]
     
-    titulo_tabla = f"Unidades con Mayor Riesgo Operativo (≥ 7.0) - {len(df_tabla)} unidades"
-    
-    return kpis, fig_barras, fig_scatter, fig_boxplot, data, columns, titulo_tabla
+    return kpis, costos_riesgo, fig_barras, fig_scatter, fig_boxplot, data, columns, titulo_tabla
 
 # %%
 # Función de cálculo actualizada
@@ -2741,6 +2976,7 @@ def display_page(pathname):
 server = app.server
 if __name__ == "__main__":
     app.run_server(debug=False, host='0.0.0.0', port=10000)
+
 
 # %%
 
