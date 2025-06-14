@@ -3,7 +3,7 @@ services:
     name: tdr-dashboard
     env: python
     buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn DASHBOARD_FINAL:server"
+    startCommand: "gunicorn Dashboard_TDR:server"
     envVars:
       - key: PYTHON_VERSION
         value: 3.9.18
